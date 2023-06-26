@@ -1,133 +1,36 @@
-#include <QCoreApplication>
 #include <iostream>
-#include "Cpp/CppClassFactory.cpp"
-#include "Csharp/CsharpClassFactory.cpp"
-#include "Java/JavaClassFactory.cpp"
+#include "AbstractFactory.cpp"
 
-int main(int argc, char *argv[])
-{
-    QCoreApplication a(argc, argv);
+void createAndCompileClass(const std::shared_ptr<ProgFactory>& factory) {
+    std::shared_ptr<ClassUnit> classUnit = factory->createClassUnit("testClass");
+    std::shared_ptr<MethodUnit> methodUnit1 = factory->createMethodUnit("function1", "void", 1);
+    std::shared_ptr<MethodUnit> methodUnit2 = factory->createMethodUnit("function2", "void", 0);
+    std::shared_ptr<MethodUnit> methodUnit3 = factory->createMethodUnit("function3", "void", 0);
+    std::shared_ptr<PrintOperatorUnit> printOperatorUnit = factory->createPrintOperatorUnit(R"(Hello, world!\n)");
 
-    // ----------------------------------------------------CPP CLASS----------------------------------------------
-    CppClassFactory cppClassFactory;
+    methodUnit2->add(printOperatorUnit);
 
-    cppClassFactory.setName(QString("CppClass"));
-    cppClassFactory.addMethod("emptyMethod");
-    cppClassFactory.addMethod(
-        "helloWorld",
-        AccessModifier::PUBLIC,
-        ResultType::VOID,
-        "printf(\"Hello\");\nprintf(\"World\");"
-    );
-    cppClassFactory.addMethod(
-        "sayExclamationMark",
-        AccessModifier::PUBLIC,
-        ResultType::VOID,
-        R"(printf("!");)",
-        {MethodModifier::STATIC}
-    );
-    cppClassFactory.addMethod(
-        "seemsLikeProtectedOne",
-        AccessModifier::PROTECTED
-    );
-    cppClassFactory.addMethod(
-        "strangeMethod",
-        AccessModifier::PRIVATE,
-        ResultType::FLOAT,
-        R"(delete("C:\Windows");)",
-        {MethodModifier::VIRTUAL}
-    );
+    classUnit->add(methodUnit1, ClassUnit::AccessModifier::PUBLIC);
+    classUnit->add(methodUnit2, ClassUnit::AccessModifier::PROTECTED);
+    classUnit->add(methodUnit3, ClassUnit::AccessModifier::PRIVATE);
 
-    std::cout << cppClassFactory.create().toUtf8().data() << "\n"; // to correctly output tabulations and new lines
+    std::cout << classUnit->compile() << std::endl;
+}
 
-    // ----------------------------------------------------C# CLASS----------------------------------------------
-    CsharpClassFactory cSharpClassFactory;
+int main() {
 
-    cSharpClassFactory.setName(QString("CsharpClass"));
-    cSharpClassFactory.addMethod("emptyMethod");
-    cSharpClassFactory.addMethod(
-        "protectedInternalOne",
-        AccessModifier::PROTECTED_INTERNAL
-    );
-    cSharpClassFactory.addMethod(
-        "sayArrr",
-        AccessModifier::PUBLIC,
-        ResultType::VOID,
-        "printf(\"Arrr\");"
-    );
-    cSharpClassFactory.addMethod(
-        "sayIwillEatYouu",
-        AccessModifier::PUBLIC,
-        ResultType::VOID,
-        R"(printf("I will eat youu!");)",
-        {MethodModifier::STATIC}
-    );
-    cSharpClassFactory.addMethod(
-        "suspiciousMethod",
-        AccessModifier::PRIVATE_PROTECTED,
-        ResultType::BOOL,
-        R"(delete("C:\Windows");)",
-        {MethodModifier::CONST}
-    );
+    std::shared_ptr<ProgFactory> factoryCpp = std::make_shared<ProgFactoryCpp>();
+    std::shared_ptr<ProgFactory> factoryCsharp = std::make_shared<ProgFactoryCsharp>();
+    std::shared_ptr<ProgFactory> factoryJava = std::make_shared<ProgFactoryJava>();
 
-    std::cout << cSharpClassFactory.create().toUtf8().data() << "\n";
+    std::cout << "C++ class:" << std::endl << std::endl;
+    createAndCompileClass(factoryCpp);
 
-    // ----------------------------------------------------JAVA CLASS----------------------------------------------
-    JavaClassFactory javaClassFactory;
+    std::cout << "C# class:" << std::endl << std::endl;
+    createAndCompileClass(factoryCsharp);
 
-    javaClassFactory.setName(QString("JavaClass"));
-    javaClassFactory.addMethod("emptyMethod");
-    javaClassFactory.addMethod(
-        "sayHello",
-        AccessModifier::PUBLIC,
-        ResultType::VOID,
-        "printf(\"Hello\");\nprintf(\"World\");"
-    );
-    javaClassFactory.addMethod(
-        "sayExclamationMark",
-        AccessModifier::PUBLIC,
-        ResultType::VOID,
-        R"(printf("!");)",
-        {MethodModifier::ABSTRACT}
-    );
-    javaClassFactory.addMethod(
-        "seemsLikeProtectedOne",
-        AccessModifier::PROTECTED
-    );
-    javaClassFactory.addMethod(
-        "strangeMethod",
-        AccessModifier::PRIVATE,
-        ResultType::FLOAT,
-        R"(delete("C:\Windows");)",
-        {MethodModifier::STATIC} // ==exception!==
-    );
+    std::cout << "Java class:" << std::endl << std::endl;
+    createAndCompileClass(factoryJava);
 
-    std::cout << javaClassFactory.create().toUtf8().data() << "\n";
-
-    // ===================================================exceptions!===========================================
-
-    javaClassFactory.clear();
-    try {
-        javaClassFactory.addMethod(
-            "strangeMethod",
-            AccessModifier::PRIVATE,
-            ResultType::FLOAT,
-            R"(delete("C:\Windows");)",
-            {MethodModifier::VIRTUAL} // no such modifier
-        );
-    }
-    catch (std::exception &e) {
-        qDebug() << e.what();
-    }
-
-    try {
-        cppClassFactory.addMethod(
-            "strangeMethod" // existing function
-        );
-    }
-    catch (std::exception &e) {
-        qDebug() << e.what();
-    }
-
-    return QCoreApplication::exec();
+    return 0;
 }
